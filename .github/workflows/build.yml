@@ -1,0 +1,48 @@
+# 工作流名称
+name: Java CI with Gradle
+
+# 触发条件：当代码推送到 master 分支，或被手动触发时运行
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+# 权限设置：允许工作流写入内容，以便上传构建产物 (Artifacts)
+permissions:
+  contents: write
+
+# 定义具体任务
+jobs:
+  build:
+    # 运行环境：使用最新版的 Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. 拉取你的仓库代码
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 2. 设置 Java 环境
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    # 3. 给 Gradle 包装器添加执行权限（仅在 Linux/macOS 环境需要）
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    # 4. 执行构建命令
+    - name: Build with Gradle
+      # 这里使用 --no-daemon 避免进程残留，--stacktrace 输出更详细的错误信息
+      run: ./gradlew build --no-daemon --stacktrace
+
+    # 5. 上传构建产物（这是你最关心的部分）
+    - name: Upload JAR artifact
+      uses: actions/upload-artifact@v4
+      with:
+        # 产物名称，可自定义
+        name: maidcode-build-artifact
+        # 产物路径：从 build/libs/ 文件夹下查找所有.jar文件
+        path: build/libs/*.jar
